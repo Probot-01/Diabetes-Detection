@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Datasets and Matrices
+*.csv
+*.npy
+*.npz
+*.h5
+
+# Serialized models
+*.pkl
+*.joblib
+*.pt
+*.pth
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Jupyter/Colab cache
+.ipynb_checkpoints/
+
+# Generated Output / Plots
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+
+# OS generated files
+.DS_Store
+Thumbs.db

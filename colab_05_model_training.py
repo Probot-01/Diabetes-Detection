@@ -7,91 +7,28 @@ from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix, f1_
 import joblib
 
 def main():
-    print("STEP 1 - Fix the is_synthetic column:")
+    print("STEP 1 - Load all data:")
     
-    try:
-        # Load feature names robustly to locate 'is_synthetic'
-        df_feats = pd.read_csv('feature_names.csv')
-        if 'feature_name' in df_feats.columns:
-            features_C = df_feats['feature_name'].tolist()
-        else:
-            df_feats = pd.read_csv('feature_names.csv', header=None)
-            features_C = df_feats.iloc[:, 0].tolist()
-            
-        def get_idx(feats, name):
-            for i, f in enumerate(feats):
-                if name.lower() in str(f).lower():
-                    return i
-            return None
-            
-        idx_C = get_idx(features_C, 'is_synthetic')
-        
-        # Load the saved numpy arrays
-        X_train_C = np.load('X_train.npy', allow_pickle=True)
-        X_test_C = np.load('X_test.npy', allow_pickle=True)
-        
-        X_train_A = np.load('X_train_A.npy', allow_pickle=True)
-        X_test_A = np.load('X_test_A.npy', allow_pickle=True)
-        
-        X_train_B = np.load('X_train_B.npy', allow_pickle=True)
-        X_test_B = np.load('X_test_B.npy', allow_pickle=True)
-        
-        if idx_C is not None:
-            # We must calculate the shifted index for Versions A and B, 
-            # since they already dropped columns (Age, BMI, Gender) located BEFORE 'is_synthetic'.
-            
-            # Count dropped columns before idx_C for Version A
-            dropped_for_A = [i for i, f in enumerate(features_C) if any(d.lower() in str(f).lower() for d in ['age', 'bmi', 'gender', 'sex'])]
-            idx_A = idx_C - sum(1 for i in dropped_for_A if i < idx_C)
-            
-            # Count dropped columns before idx_C for Version B
-            dropped_for_B = [i for i, f in enumerate(features_C) if 'age' in str(f).lower()]
-            idx_B = idx_C - sum(1 for i in dropped_for_B if i < idx_C)
-            
-            # Drop the column from all six files if the index is valid
-            if idx_A < X_train_A.shape[1]:
-                X_train_A = np.delete(X_train_A, idx_A, axis=1)
-                X_test_A = np.delete(X_test_A, idx_A, axis=1)
-                np.save('X_train_A.npy', X_train_A)
-                np.save('X_test_A.npy', X_test_A)
-                
-            if idx_B < X_train_B.shape[1]:
-                X_train_B = np.delete(X_train_B, idx_B, axis=1)
-                X_test_B = np.delete(X_test_B, idx_B, axis=1)
-                np.save('X_train_B.npy', X_train_B)
-                np.save('X_test_B.npy', X_test_B)
-                
-            if idx_C < X_train_C.shape[1]:
-                X_train_C = np.delete(X_train_C, idx_C, axis=1)
-                X_test_C = np.delete(X_test_C, idx_C, axis=1)
-                np.save('X_train.npy', X_train_C)
-                np.save('X_test.npy', X_test_C)
-            
-            print(f"is_synthetic removed. New shapes: A={X_train_A.shape[1]} B={X_train_B.shape[1]} C={X_train_C.shape[1]}\n")
-        else:
-            print("is_synthetic column not found in feature_names.csv. Proceeding with existing data.\n")
-            
-    except Exception as e:
-        print(f"Error in STEP 1: {e}\n")
+    # Load feature versions and their specific cleaned labels
+    X_train_A = np.load('X_train_A.npy', allow_pickle=True).astype(np.float32)
+    X_test_A  = np.load('X_test_A.npy', allow_pickle=True).astype(np.float32)
+    y_train_A = np.load('y_train_A.npy', allow_pickle=True)
     
-    print("STEP 2 - Load all data:")
-    y_train = np.load('y_train.npy', allow_pickle=True)
+    X_train_B = np.load('X_train_B.npy', allow_pickle=True).astype(np.float32)
+    X_test_B  = np.load('X_test_B.npy', allow_pickle=True).astype(np.float32)
+    y_train_B = np.load('y_train_B.npy', allow_pickle=True)
+    
+    X_train_C = np.load('X_train.npy', allow_pickle=True).astype(np.float32)
+    X_test_C  = np.load('X_test.npy', allow_pickle=True).astype(np.float32)
+    y_train_C = np.load('y_train_C.npy', allow_pickle=True)
+    
+    # y_test is identical for all versions since test rows were unmodified
     y_test = np.load('y_test.npy', allow_pickle=True)
-    
-    # Reload from disk to ensure we have the latest shapes (in case STEP 1 modified them)
-    X_train_A = np.load('X_train_A.npy', allow_pickle=True)
-    X_test_A = np.load('X_test_A.npy', allow_pickle=True)
-    
-    X_train_B = np.load('X_train_B.npy', allow_pickle=True)
-    X_test_B = np.load('X_test_B.npy', allow_pickle=True)
-    
-    X_train_C = np.load('X_train.npy', allow_pickle=True)
-    X_test_C = np.load('X_test.npy', allow_pickle=True)
     
     print("Data loaded successfully.\n")
     
     def train_and_evaluate(X_train, X_test, y_train, y_test, version_name):
-        # STEP 3 - Define models
+        # STEP 2 - Define models
         models = {
             "RF": RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42),
             "XGB": XGBClassifier(n_estimators=100, random_state=42, scale_pos_weight=3, eval_metric='logloss', use_label_encoder=False),
@@ -146,18 +83,18 @@ def main():
             }
         return results
 
-    # STEP 4 - Run train_and_evaluate on all three versions
+    # STEP 3 - Run train_and_evaluate on all three versions
     print("===== VERSION A: VOICE ONLY =====")
-    res_A = train_and_evaluate(X_train_A, X_test_A, y_train, y_test, "A: Voice only")
+    res_A = train_and_evaluate(X_train_A, X_test_A, y_train_A, y_test, "A: Voice only")
     
     print("===== VERSION B: VOICE + BMI/GENDER =====")
-    res_B = train_and_evaluate(X_train_B, X_test_B, y_train, y_test, "B: Voice+BMI/Sex")
+    res_B = train_and_evaluate(X_train_B, X_test_B, y_train_B, y_test, "B: Voice+BMI/Sex")
     
     print("===== VERSION C: ALL FEATURES + AGE (CONFOUND) =====")
-    res_C = train_and_evaluate(X_train_C, X_test_C, y_train, y_test, "C: All + Age ⚠️")
+    res_C = train_and_evaluate(X_train_C, X_test_C, y_train_C, y_test, "C: All + Age ⚠️")
     
-    # STEP 5 - Print a final comparison table
-    print("STEP 5 - Final Comparison Table:\n")
+    # STEP 4 - Print a final comparison table
+    print("STEP 4 - Final Comparison Table:\n")
     print("╔" + "═"*19 + "╦" + "═"*8 + "╦" + "═"*9 + "╦" + "═"*13 + "╦" + "═"*10 + "╗")
     print("║ Version           ║ Model  ║ AUC-ROC ║ Sensitivity ║    F1    ║")
     print("╠" + "═"*19 + "╬" + "═"*8 + "╬" + "═"*9 + "╬" + "═"*13 + "╬" + "═"*10 + "╣")
@@ -185,8 +122,8 @@ def main():
         
     print("╚" + "═"*19 + "╩" + "═"*8 + "╩" + "═"*9 + "╩" + "═"*13 + "╩" + "═"*10 + "╝\n")
 
-    # STEP 6 - Save the best model
-    print("STEP 6 - Save the best model:")
+    # STEP 5 - Save the best model
+    print("STEP 5 - Save the best model:")
     
     best_auc = -1
     best_model_info = None
