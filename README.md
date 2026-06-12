@@ -1,49 +1,107 @@
-# Voice-Based Diabetes Detection
+# 🩺 Voice Diabetes Screening System
 
-An end-to-end Machine Learning pipeline designed to detect diabetes directly from vocal biomarkers (MFCCs, LPCs, ZCR, etc.) alongside optional biological demographics. 
+> **Status: Work in Progress — College Research Project**
 
-This project is built explicitly to execute sequentially inside Google Colab environments.
+A machine learning system that predicts diabetes risk from voice recordings using acoustic biomarkers. The system extracts 267 features from voice audio and runs predictions across multiple specialized models.
 
-## Overview
+---
 
-The core objective of this repository is to train and evaluate robust classification models (Random Forest, XGBoost, SVM) on voice data. A significant portion of this pipeline is dedicated to extreme data hygiene—ensuring zero train/test data leakage from SMOTE resampling, systematically proving the absence of confounding variables (like `is_synthetic` markers or Blood Sugar Levels), and explicitly isolating demographics (Age, Gender, BMI) to measure the raw predictive power of the voice features alone.
+## 📋 Project Overview
 
-## Data Versions (A, B, C)
+Diabetes affects vocal tract muscles and breathing patterns in measurable ways. This project investigates whether those changes can be detected automatically from a short voice recording using ML.
 
-To properly understand the impact of confounding demographic variables, the dataset is split into three distinct versions prior to model training:
-- **Version A (Voice Only):** Drops Age, BMI, and Gender. Measures pure vocal predictive power.
-- **Version B (Voice + BMI/Gender):** Drops Age (a massive confounder), but retains BMI and Gender.
-- **Version C (All Features):** Contains all raw features including Age (⚠️ known confound).
+**Key Features:**
+- No blood test or medical device required
+- 5 prediction models covering voice-only, gender-stratified, and BMI-inclusive variants
+- Audio preprocessing pipeline (denoising, trimming, normalization)
+- Web app built with Gradio (runs locally)
 
-## Pipeline Architecture
+---
 
-The scripts should be copied and run in Google Colab sequentially:
+## 📁 Folder Structure
 
-### Phase 1: Data Ingestion & Preprocessing
-- `colab_01_data_inspection.py` - Initial CSV load, class balance verification, and EDA.
-- `colab_02_preprocessing.py` - Drops direct medical indicators (`BSL`) to prevent cheating, cleans datasets.
-- `colab_03_eda.py` - Deeper exploratory data analysis.
-- `colab_04_data_preparation.py` - Train/Test splits, applies SMOTE for imbalance, and executes `StandardScaler`. Outputs initial `.npy` arrays.
-- `colab_04b_feature_name_check.py` / `colab_setup.py` - Environment and variable setup.
+```
+Diabetes/
+├── data/
+│   ├── raw/              ← Original unmodified datasets (CSV from Librosa/OpenSMILE/PRAAT)
+│   └── processed/        ← Cleaned dataset used for training, plus gender-stratified pickles
+│
+├── Colab/                ← Full ML pipeline scripts (colab_01 → colab_19)
+│   ├── colab_01_data_inspection.py
+│   ├── colab_02_preprocessing.py
+│   ├── colab_03_eda.py
+│   ├── colab_04_data_preparation.py
+│   ├── colab_05_model_training.py
+│   ├── colab_06_data_validation.py
+│   ├── colab_07_data_fixes.py
+│   ├── colab_08_rebuild_versions.py
+│   ├── colab_09_final_diagnostic.py
+│   ├── colab_10_post_training.py
+│   ├── colab_11_gender_confound.py
+│   ├── colab_12_final_models_export.py
+│   ├── colab_13_pre_deployment_tests.py
+│   ├── colab_14_refit_scalers.py
+│   ├── colab_15_check_scaling.py
+│   ├── colab_16_slice_scalers.py
+│   ├── colab_17_feature_order_check.py
+│   ├── colab_18_train_new_models.py
+│   └── colab_19_train_models_6MF.py
+│
+└── voice_diabetes_app/   ← Production web application
+    ├── app.py            ← Main Gradio app (5 models, single-page comparison)
+    ├── app2.py           ← Internal testing tool (dataset random sampling)
+    ├── setup_check.py    ← Environment checker before running
+    ├── requirements.txt
+    ├── models/           ← All trained models and scalers
+    └── temp_audio/       ← Cleaned audio temp files (auto-generated, git-ignored)
+```
 
-### Phase 2: Feature Isolation & Cleansing
-- `create_versions.py` - Initially partitions the data into Versions A, B, and C.
-- `colab_07_data_fixes.py` - The heavy-lifting script that purges the `is_synthetic` column and rigorously deletes duplicate SMOTE leakage rows from the training matrices.
-- `colab_08_rebuild_versions.py` - Cleanly reconstructs Versions A, B, and C directly from the safely scrubbed data arrays to guarantee flawless alignments.
+---
 
-### Phase 3: Diagnostics & Validation
-- `colab_11_gender_confound.py` - Cross-tabulates label classes to detect if gender was inadvertently skewing predictions >20%.
-- `colab_06_data_validation.py` - Validates the absence of forbidden columns, missing values, and calculates train/test row intersection.
-- `colab_09_final_diagnostic.py` - The "Final Flight Check". Ensures matrix shapes align flawlessly right before training.
+## 🧠 Models
 
-### Phase 4: Training & Explainability
-- `colab_05_model_training.py` - Dynamically ingests the Version A, B, and C matrices and trains an RF, XGB, and SVM on each. Prints comparison tables (AUC-ROC, Sensitivity, F1).
-- `colab_10_post_training.py` - Re-trains the ultimate winning model (XGBoost Version B), saves it to `best_model.pkl`, and spins up `shap.TreeExplainer()` to generate visual intelligence graphs mapping precisely *why* the model made its diagnoses.
+| Model | Features | AUC-ROC | Sensitivity |
+|-------|----------|---------|-------------|
+| Model 1 | Voice only (267) | 0.80 | 0.64 |
+| Model 5M | Male patients only (267) | 0.88 | 0.64 |
+| Model 5F | Female patients only (267) | 0.73 | 0.41 |
+| Model 6M | Male + BMI (268) | ~0.86 | — |
+| Model 6F | Female + BMI (268) | ~0.79 | — |
 
-## Setup
-Upload your original `diabetes_voice_dataset.csv` directly into the base file directory of your Google Colab instance, and begin executing the pipeline.
+---
 
-## Outputs
-- **`.npy` arrays**: Standardized and cleansed matrices.
-- **`best_model.pkl`**: The fully trained, serialized XGBoost model.
-- **`shap_*.png`**: High-resolution SHAP visual diagrams explaining algorithmic rationale.
+## 🚀 Running the App
+
+```bash
+cd voice_diabetes_app
+pip install -r requirements.txt
+python setup_check.py      # Verify all models are present
+python app.py              # Main app → http://localhost:7860
+python app2.py             # Test app → http://localhost:7861
+```
+
+**Tip:** Say "aaah" steadily for 5 seconds when recording.  
+After recording, the player may show `00:00` — this is a browser WebM limitation. The audio is captured correctly; just click Analyse.
+
+---
+
+## 🔬 Feature Extraction Pipeline
+
+Each audio file is:
+1. **Denoised** — background noise removed using first 0.5s as noise profile
+2. **Trimmed** — silence stripped from start/end
+3. **Normalized** — peak normalization to uniform loudness
+4. **Feature extracted** — 267 features: MFCC×79, Delta×80, Delta2×80, ZCR×2, Spectral features×8, LPC×16, Jitter×1, Shimmer×1
+
+---
+
+## ⚕️ Disclaimer
+
+This is a **research prototype** built as a college project. It is **not a medical device** and must not be used for clinical diagnosis. Always consult a qualified doctor.
+
+---
+
+## 👤 Author
+
+College Project — Machine Learning / Healthcare AI  
+*Work in Progress*

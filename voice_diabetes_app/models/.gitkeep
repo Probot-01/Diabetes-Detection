@@ -1,0 +1,7 @@
+# This folder is intended to hold the 6 model artifacts from Colab:
+# model1_voice_only.pkl
+# model2_voice_demo.pkl
+# scaler_A.pkl
+# scaler_B.pkl
+# feature_names_A.csv
+# feature_names_B.csv

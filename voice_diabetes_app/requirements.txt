@@ -1,0 +1,11 @@
+gradio
+librosa
+numpy
+joblib
+praat-parselmouth
+scikit-learn
+scipy
+pandas
+xgboost
+noisereduce
+soundfile
