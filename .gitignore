@@ -3,18 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Datasets and Matrices
-*.csv
-*.npy
-*.npz
-*.h5
-
-# Serialized models
-*.pkl
-*.joblib
-*.pt
-*.pth
-
 # Virtual environments
 venv/
 env/
@@ -33,3 +21,8 @@ env/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Temp audio files (auto-generated, not source code)
+voice_diabetes_app/temp_audio/*.wav
+voice_diabetes_app/temp_audio/*.mp3
+voice_diabetes_app/temp_audio/*.webm
