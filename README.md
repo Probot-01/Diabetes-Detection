@@ -76,8 +76,6 @@ Five XGBoost models trained with gender-stratified approach:
 | M4 | model6M_male_bmi.pkl | 268 voice+BMI | Males |
 | M5 | model6F_female_bmi.pkl | 268 voice+BMI | Females |
 
-> Model files are not included in this repository due to file size.  
-> See setup instructions below.
 
 ---
 
@@ -113,7 +111,6 @@ cd Diabetes-Detection
 pip install -r requirements.txt
 
 # 3. Place model files in voice_diabetes_app/models/ folder
-# Download from: [add your Google Drive link here]
 # Required files:
 #   model1_voice_only.pkl    scaler_A.pkl
 #   model5M_male.pkl         scaler_male.pkl
@@ -171,6 +168,7 @@ XGBoost Prediction
 4. **High AUC in gender models** — may partially reflect demographic patterns, not purely acoustic signal
 5. **Not clinically validated** — requires hospital-grade testing before any medical use
 
+
 ---
 
 ## 📚 References
@@ -180,14 +178,6 @@ XGBoost Prediction
 3. Parselmouth / Praat - Voice feature extraction
 4. XGBoost - Chen & Guestrin (2016)
 
----
-
-## 👤 Author
-
-**[Your Name]**  
-Computer Engineering, Semester IV  
-Sardar Patel Institute of Technology (SPIT)  
-Mumbai, India
 
 ---
 
