@@ -1,0 +1,15 @@
+gradio
+librosa
+numpy
+joblib
+praat-parselmouth
+scikit-learn
+scipy
+pandas
+noisereduce
+soundfile
+xgboost
+imbalanced-learn
+shap
+matplotlib
+seaborn

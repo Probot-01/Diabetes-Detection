@@ -1,0 +1,6 @@
+Model,Population,N,AUC,Sensitivity,Specificity,F1,MCC,FN,FP,Threshold
+M1 Voice only,All,320,0.5923,0.0500,0.9958,0.0941,0.1600,76,1,0.3
+M2 Male only,Male,213,0.9962,0.9474,0.9808,0.9474,0.9300,3,3,0.5
+M3 Female only,Female,107,0.9565,0.8696,0.9881,0.9091,0.8900,3,1,0.5
+M4 Male+BMI,Male,213,0.9961,0.9298,0.9936,0.9550,0.9500,4,1,0.5
+M5 Female+BMI,Female,107,0.9840,0.9130,0.9762,0.9130,0.8900,2,2,0.5

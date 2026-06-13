@@ -203,29 +203,32 @@ def extract_voice_features(audio_path):
 # SECTION 3 - RESULT FORMATTER
 # =====================================================================
 def format_single(prob, model_name, threshold):
-    """Formats a probability into a human-readable risk card."""
-    percentage = round(prob * 100, 1)
+    """
+    Formats a probability into a human-readable risk card.
+    The moderate band is threshold-relative (threshold * 0.7)
+    so it scales correctly for each model's threshold.
+    """
+    percentage = f"{prob * 100:.1f}"
 
     if prob >= threshold:
-        risk, emoji = "HIGH RISK", "⚠️"
-        advice = "Consult a doctor."
+        risk, emoji = "HIGH RISK",     "⚠️"
         bar = "█████████░"
-    elif prob >= 0.4:
+    elif prob >= (threshold * 0.7):
         risk, emoji = "MODERATE RISK", "🔶"
-        advice = "Consider a checkup."
         bar = "██████░░░░"
     else:
-        risk, emoji = "LOW RISK", "✅"
-        advice = "Patterns appear normal."
+        risk, emoji = "LOW RISK",      "✅"
         bar = "███░░░░░░░"
 
-    return f"""{emoji} {risk}
-{'─'*28}
-Score : {bar}
-        {percentage}%
-{'─'*28}
-{advice}
-⚕️ Research only."""
+    return (
+        f"{emoji} {risk}\n"
+        f"{'─'*26}\n"
+        f"{bar}\n"
+        f"Score: {percentage}%\n"
+        f"{'─'*26}\n"
+        f"⚕️ Research only.\n"
+        f"* Not a diagnosis."
+    )
 
 
 # =====================================================================
@@ -250,44 +253,44 @@ def run_all_models(audio, bmi):
         bmi_scaled = scaler_bmi.transform([[float(bmi)]])[0][0]
 
         # ----------------------------------------------------------
-        # Model 1 — Voice Only (scaler_A, 267 features, threshold 0.7)
+        # Model 1 — Voice Only (threshold 0.3 — best F1 from evaluation)
         # ----------------------------------------------------------
         scaled_1 = scaler_A.transform(features.reshape(1, -1))
         p1 = model1.predict_proba(scaled_1)[0][1]
-        r1 = format_single(p1, "Model 1", threshold=0.7)
+        r1 = format_single(p1, "Model 1", threshold=0.3)
 
         # ----------------------------------------------------------
-        # Model 5M — Male Voice Only (scaler_male, 267 features, threshold 0.6)
+        # Model 5M — Male Voice Only (threshold 0.5)
         # ----------------------------------------------------------
         scaled_2 = scaler_male.transform(features.reshape(1, -1))
         p2 = model5M.predict_proba(scaled_2)[0][1]
-        r2 = format_single(p2, "Model 5M", threshold=0.6)
+        r2 = format_single(p2, "Model 5M", threshold=0.5)
 
         # ----------------------------------------------------------
-        # Model 5F — Female Voice Only (scaler_female, 267 features, threshold 0.6)
+        # Model 5F — Female Voice Only (threshold 0.5)
         # ----------------------------------------------------------
         scaled_3 = scaler_female.transform(features.reshape(1, -1))
         p3 = model5F.predict_proba(scaled_3)[0][1]
-        r3 = format_single(p3, "Model 5F", threshold=0.6)
+        r3 = format_single(p3, "Model 5F", threshold=0.5)
 
         # ----------------------------------------------------------
-        # Model 6M — Male + BMI (scaler_maleB for voice, scaler_bmi for BMI)
+        # Model 6M — Male + BMI (threshold 0.5)
         # Voice and BMI are scaled separately, then concatenated → (268,)
         # ----------------------------------------------------------
         voice_scaled_m = scaler_maleB.transform(features.reshape(1, -1))[0]
         features_m = np.append(voice_scaled_m, bmi_scaled)
         assert features_m.shape == (268,), f"Model 6M: expected 268 features, got {features_m.shape[0]}"
         p4 = model6M.predict_proba(features_m.reshape(1, -1))[0][1]
-        r4 = format_single(p4, "Model 6M", threshold=0.6)
+        r4 = format_single(p4, "Model 6M", threshold=0.5)
 
         # ----------------------------------------------------------
-        # Model 6F — Female + BMI (scaler_femaleB for voice, scaler_bmi for BMI)
+        # Model 6F — Female + BMI (threshold 0.5)
         # ----------------------------------------------------------
         voice_scaled_f = scaler_femaleB.transform(features.reshape(1, -1))[0]
         features_f = np.append(voice_scaled_f, bmi_scaled)
         assert features_f.shape == (268,), f"Model 6F: expected 268 features, got {features_f.shape[0]}"
         p5 = model6F.predict_proba(features_f.reshape(1, -1))[0][1]
-        r5 = format_single(p5, "Model 6F", threshold=0.6)
+        r5 = format_single(p5, "Model 6F", threshold=0.5)
 
         return r1, r2, r3, r4, r5
 
@@ -342,11 +345,11 @@ with gr.Blocks(title="Voice Diabetes Screening") as demo:
     gr.Markdown("## 📊 Results — All Models")
 
     with gr.Row():
-        out1 = gr.Textbox(label="Model 1\nVoice Only\nAUC 0.80",    lines=10)
-        out2 = gr.Textbox(label="Model 2\nMale Only\nAUC 0.88",     lines=10)
-        out3 = gr.Textbox(label="Model 3\nFemale Only\nAUC 0.73",   lines=10)
-        out4 = gr.Textbox(label="Model 4\nMale + BMI\nAUC 0.86",    lines=10)
-        out5 = gr.Textbox(label="Model 5\nFemale + BMI\nAUC 0.79",  lines=10)
+        out1 = gr.Textbox(label="Model 1\nVoice Only | AUC 0.59\nAll genders",        lines=10)
+        out2 = gr.Textbox(label="Model 2\nMale Only | AUC 0.996\nMales only",         lines=10)
+        out3 = gr.Textbox(label="Model 3\nFemale Only | AUC 0.957\nFemales only",     lines=10)
+        out4 = gr.Textbox(label="Model 4\nMale + BMI | AUC 0.996\nMales only",        lines=10)
+        out5 = gr.Textbox(label="Model 5\nFemale + BMI | AUC 0.984\nFemales only",   lines=10)
 
     analyse_btn.click(
         fn=run_all_models,
@@ -356,11 +359,27 @@ with gr.Blocks(title="Voice Diabetes Screening") as demo:
 
     gr.Markdown("""
     ---
-    **How to interpret:**
-    Use Model 1 for anonymous screening.
-    Use Model 2 or 4 if you are male.
-    Use Model 3 or 5 if you are female.
-    Models 4 and 5 also require your BMI.
+    ### 📌 How To Use These Results
+    **If you are Male:**
+    Use Model 2 or Model 4. Both are highly accurate (AUC ~0.996).
+    Model 4 requires BMI. Model 2 does not.
+
+    **If you are Female:**
+    Use Model 5 (Voice + BMI) for best accuracy (AUC 0.984).
+    Model 3 (Voice only) also works well (AUC 0.957).
+
+    **If you prefer anonymity:**
+    Use Model 1 (Voice only, no personal data).
+    Note: accuracy is limited (AUC 0.59).
+    Lower reliability — use as first-pass screening only.
+
+    **Read the risk level label, not the score number.**
+    Each model uses a different internal scale.
+    Scores are not comparable across models.
+
+    ⚕️ This system is a research prototype.
+    Not validated for clinical use.
+    Always consult a qualified doctor.
     """)
 
 

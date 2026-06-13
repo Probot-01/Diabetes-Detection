@@ -3,6 +3,28 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Model and scaler files (too large for git — host on Google Drive)
+*.pkl
+*.joblib
+
+# Raw numpy data arrays
+*.npy
+*.npz
+
+# Datasets — exclude all CSV except the results summary
+*.csv
+!evaluation/final_results.csv
+
+# Keep the models folder placeholder
+!models/.gitkeep
+
+# Audio files (auto-generated or user recordings)
+*.wav
+*.mp3
+*.ogg
+*.webm
+temp_audio/
+
 # Virtual environments
 venv/
 env/
@@ -11,18 +33,6 @@ env/
 # Jupyter/Colab cache
 .ipynb_checkpoints/
 
-# Generated Output / Plots
-*.png
-*.jpg
-*.jpeg
-*.svg
-*.pdf
-
 # OS generated files
 .DS_Store
 Thumbs.db
-
-# Temp audio files (auto-generated, not source code)
-voice_diabetes_app/temp_audio/*.wav
-voice_diabetes_app/temp_audio/*.mp3
-voice_diabetes_app/temp_audio/*.webm

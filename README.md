@@ -1,107 +1,194 @@
-# 🩺 Voice Diabetes Screening System
+# 🩺 Voice-Based Diabetes Prediction System
 
-> **Status: Work in Progress — College Research Project**
+> Research Prototype | College Project  
+> Sardar Patel Institute of Technology (SPIT)
 
-A machine learning system that predicts diabetes risk from voice recordings using acoustic biomarkers. The system extracts 267 features from voice audio and runs predictions across multiple specialized models.
-
----
-
-## 📋 Project Overview
-
-Diabetes affects vocal tract muscles and breathing patterns in measurable ways. This project investigates whether those changes can be detected automatically from a short voice recording using ML.
-
-**Key Features:**
-- No blood test or medical device required
-- 5 prediction models covering voice-only, gender-stratified, and BMI-inclusive variants
-- Audio preprocessing pipeline (denoising, trimming, normalization)
-- Web app built with Gradio (runs locally)
+A machine learning system that analyzes acoustic biomarkers in voice recordings to assess the risk of Type 2 diabetes, using gender-stratified models for improved accuracy.
 
 ---
 
-## 📁 Folder Structure
+## ⚠️ Disclaimer
+
+This is a **research prototype** built as a college project. It is **not a medical device** and should **not be used for clinical diagnosis**. Always consult a qualified doctor for medical advice.
+
+---
+
+## 📊 Results Summary
+
+| Model | Population | AUC-ROC | Sensitivity | FN |
+|-------|-----------|---------|-------------|-----|
+| M1 Voice only | All (320) | 0.5923 | 0.05 | 76 |
+| M2 Male only | Male (213) | 0.9962 | 0.9474 | 3 |
+| M3 Female only | Female (107) | 0.9565 | 0.8696 | 3 |
+| M4 Male + BMI | Male (213) | 0.9961 | 0.9298 | 4 |
+| M5 Female + BMI | Female (107) | 0.9840 | 0.9130 | 2 |
+
+### Key Findings
+
+**Finding 1 — Voice alone is insufficient**  
+Model 1 (voice only) achieves AUC 0.59, confirming that pure acoustic biomarkers have weak standalone diabetes detection capability. This is consistent with existing literature.
+
+**Finding 2 — Gender stratification transforms performance**  
+Training separate models per gender eliminates gender dominance and achieves AUC > 0.95 for both groups. This is the primary research contribution of the project.
+
+**Finding 3 — BMI helps females more than males**  
+Adding BMI improves female model AUC from 0.9565 to 0.9840, but adds negligible improvement for males (0.9962 vs 0.9961). This gender-BMI interaction is a novel finding.
+
+---
+
+## 📈 Evaluation Plots
+
+### ROC Curves
+![ROC Curves](evaluation/roc_curves.png)
+
+### Confusion Matrices
+![Confusion Matrices](evaluation/confusion_matrices.png)
+
+### Model Performance Comparison
+![Performance Comparison](evaluation/metric_comparison.png)
+
+### SHAP Feature Importance
+![SHAP Bar](evaluation/shap_bar.png)
+
+---
+
+## 🗂️ Dataset
+
+- **Source:** Voice diabetes dataset with pre-extracted acoustic features
+- **Samples:** 1600 total (1200 non-diabetic, 400 diabetic)
+- **Features:** 304 voice features + 4 demographic features
+- **Voice features:** MFCC (80), Delta-MFCC (80), Delta²-MFCC (80), Spectral features, LPC, Jitter, Shimmer
+- **Demographic:** Age, Gender, BMI, BSL (excluded from training)
+- **Train/Test split:** 80/20, stratified, random_state=42
+- **Class balancing:** SMOTE applied to training set only
+
+---
+
+## 🤖 Models
+
+Five XGBoost models trained with gender-stratified approach:
+
+| Model | File | Features | Target Population |
+|-------|------|----------|-------------------|
+| M1 | model1_voice_only.pkl | 267 voice | All |
+| M2 | model5M_male.pkl | 267 voice | Males |
+| M3 | model5F_female.pkl | 267 voice | Females |
+| M4 | model6M_male_bmi.pkl | 268 voice+BMI | Males |
+| M5 | model6F_female_bmi.pkl | 268 voice+BMI | Females |
+
+> Model files are not included in this repository due to file size.  
+> See setup instructions below.
+
+---
+
+## 📁 Repository Structure
 
 ```
-Diabetes/
-├── data/
-│   ├── raw/              ← Original unmodified datasets (CSV from Librosa/OpenSMILE/PRAAT)
-│   └── processed/        ← Cleaned dataset used for training, plus gender-stratified pickles
-│
-├── Colab/                ← Full ML pipeline scripts (colab_01 → colab_19)
-│   ├── colab_01_data_inspection.py
-│   ├── colab_02_preprocessing.py
-│   ├── colab_03_eda.py
-│   ├── colab_04_data_preparation.py
-│   ├── colab_05_model_training.py
-│   ├── colab_06_data_validation.py
-│   ├── colab_07_data_fixes.py
-│   ├── colab_08_rebuild_versions.py
-│   ├── colab_09_final_diagnostic.py
-│   ├── colab_10_post_training.py
-│   ├── colab_11_gender_confound.py
-│   ├── colab_12_final_models_export.py
-│   ├── colab_13_pre_deployment_tests.py
-│   ├── colab_14_refit_scalers.py
-│   ├── colab_15_check_scaling.py
-│   ├── colab_16_slice_scalers.py
-│   ├── colab_17_feature_order_check.py
-│   ├── colab_18_train_new_models.py
-│   └── colab_19_train_models_6MF.py
-│
-└── voice_diabetes_app/   ← Production web application
-    ├── app.py            ← Main Gradio app (5 models, single-page comparison)
-    ├── app2.py           ← Internal testing tool (dataset random sampling)
-    ├── setup_check.py    ← Environment checker before running
-    ├── requirements.txt
-    ├── models/           ← All trained models and scalers
-    └── temp_audio/       ← Cleaned audio temp files (auto-generated, git-ignored)
+voice-diabetes-prediction/
+├── app.py                    # Main Gradio web application
+├── requirements.txt          # Python dependencies
+├── evaluation/               # All evaluation plots and results
+│   ├── roc_curves.png
+│   ├── confusion_matrices.png
+│   ├── metric_comparison.png
+│   ├── shap_bar.png
+│   ├── shap_beeswarm.png
+│   └── final_results.csv
+├── models/                   # Place downloaded .pkl files here
+├── sample_audio/             # Recording instructions
+├── notebooks/                # Training pipeline notebook
+└── Colab/                    # Full ML pipeline scripts (colab_01 → colab_22)
 ```
 
 ---
 
-## 🧠 Models
-
-| Model | Features | AUC-ROC | Sensitivity |
-|-------|----------|---------|-------------|
-| Model 1 | Voice only (267) | 0.80 | 0.64 |
-| Model 5M | Male patients only (267) | 0.88 | 0.64 |
-| Model 5F | Female patients only (267) | 0.73 | 0.41 |
-| Model 6M | Male + BMI (268) | ~0.86 | — |
-| Model 6F | Female + BMI (268) | ~0.79 | — |
-
----
-
-## 🚀 Running the App
+## 🚀 Setup and Installation
 
 ```bash
-cd voice_diabetes_app
+# 1. Clone the repository
+git clone https://github.com/Probot-01/Diabetes-Detection
+cd Diabetes-Detection
+
+# 2. Install dependencies
 pip install -r requirements.txt
-python setup_check.py      # Verify all models are present
-python app.py              # Main app → http://localhost:7860
-python app2.py             # Test app → http://localhost:7861
+
+# 3. Place model files in voice_diabetes_app/models/ folder
+# Download from: [add your Google Drive link here]
+# Required files:
+#   model1_voice_only.pkl    scaler_A.pkl
+#   model5M_male.pkl         scaler_male.pkl
+#   model5F_female.pkl       scaler_female.pkl
+#   model6M_male_bmi.pkl     scaler_maleB.pkl
+#   model6F_female_bmi.pkl   scaler_femaleB.pkl
+#                            scaler_bmi.pkl
+
+# 4. Run the app
+python voice_diabetes_app/app.py
 ```
 
-**Tip:** Say "aaah" steadily for 5 seconds when recording.  
-After recording, the player may show `00:00` — this is a browser WebM limitation. The audio is captured correctly; just click Analyse.
+Open **http://localhost:7860** in your browser.
 
 ---
 
 ## 🔬 Feature Extraction Pipeline
 
-Each audio file is:
-1. **Denoised** — background noise removed using first 0.5s as noise profile
-2. **Trimmed** — silence stripped from start/end
-3. **Normalized** — peak normalization to uniform loudness
-4. **Feature extracted** — 267 features: MFCC×79, Delta×80, Delta2×80, ZCR×2, Spectral features×8, LPC×16, Jitter×1, Shimmer×1
+Voice recordings are processed through this pipeline:
+
+```
+Raw Audio (.wav)
+      ↓
+Noise Reduction (noisereduce)
+      ↓
+Silence Trimming (librosa)
+      ↓
+Peak Normalization
+      ↓
+Feature Extraction:
+  MFCC (79)          → vocal tract shape
+  Delta-MFCC (80)    → voice dynamics
+  Delta²-MFCC (80)   → voice acceleration
+  ZCR (2)            → signal crossing rate
+  Spectral (6)       → frequency properties
+  RMS (2)            → energy/loudness
+  LPC (16)           → vocal tract resonance
+  Jitter (1)         → pitch stability
+  Shimmer (1)        → amplitude stability
+      ↓
+Total: 267 features
+      ↓
+StandardScaler normalization
+      ↓
+XGBoost Prediction
+```
 
 ---
 
-## ⚕️ Disclaimer
+## 🔍 Limitations
 
-This is a **research prototype** built as a college project. It is **not a medical device** and must not be used for clinical diagnosis. Always consult a qualified doctor.
+1. **Voice-only model is weak** (AUC 0.59) — pure acoustic biomarkers have limited standalone predictive power
+2. **Dataset size** — 1600 samples is small for medical AI
+3. **No external validation** — tested only on a held-out split from the same dataset
+4. **High AUC in gender models** — may partially reflect demographic patterns, not purely acoustic signal
+5. **Not clinically validated** — requires hospital-grade testing before any medical use
+
+---
+
+## 📚 References
+
+1. Fagherazzi et al. (2021) - Voice for Health
+2. Klick Labs (2023) - Acoustic Analysis of T2DM
+3. Parselmouth / Praat - Voice feature extraction
+4. XGBoost - Chen & Guestrin (2016)
 
 ---
 
 ## 👤 Author
 
-College Project — Machine Learning / Healthcare AI  
-*Work in Progress*
+**[Your Name]**  
+Computer Engineering, Semester IV  
+Sardar Patel Institute of Technology (SPIT)  
+Mumbai, India
+
+---
+
+*Built with Python · XGBoost · Librosa · Parselmouth · Gradio*
